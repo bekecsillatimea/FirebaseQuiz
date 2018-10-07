@@ -77,6 +77,7 @@ public class StatsFragment extends Fragment {
         set1.setColors(ColorTemplate.COLORFUL_COLORS);
 
         BarData data = new BarData(set1);
+        //
 
         barChart.setData(data);
         barChart.getDescription().setEnabled(false);
