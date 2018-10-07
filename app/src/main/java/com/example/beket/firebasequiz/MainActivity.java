@@ -87,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements MainView {
         userImage.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
+
                 int[] location = new int[2];
                 userImage.getLocationOnScreen(location);
                 float x = location[0];
