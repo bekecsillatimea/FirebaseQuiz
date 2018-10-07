@@ -80,7 +80,6 @@ public class MainActivity extends AppCompatActivity implements MainView {
                 }
             }
         });
-
     }
 
     private void endAnimation() {
