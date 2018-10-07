@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">FirebaseQuiz</string>
+
+    <!-- Facebook application ID and custom URL scheme (app ID prefixed by 'fb'). -->
+    <string name="facebook_application_id" translatable="false">319943388781081</string>
+    <string name="facebook_login_protocol_scheme" translatable="false">fb319943388781081</string>
+    <string name="sign_out">Sign out</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_start">Start</string>
+</resources>
