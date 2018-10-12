@@ -24,4 +24,6 @@ public interface MainView {
     void oppSearching();
     void oppSearchingCancelled();
     void oppFound();
+    void gameStart();
+    void countDownTimer(int countDown);
 }

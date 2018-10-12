@@ -1,9 +1,7 @@
 package com.example.beket.firebasequiz;
 
-import android.animation.ObjectAnimator;
-import android.annotation.SuppressLint;
-import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -19,7 +17,6 @@ import com.google.firebase.database.ValueEventListener;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
@@ -33,7 +30,6 @@ class MainPresenter {
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     private DatabaseReference mPlayersDatabaseReference, mRoomDatabaseReference,
             mMyPlayerDatabaseReference, mMyDailyDataDatabaseReference, mMyGameDatabaseReference;
-    private SharedPreferences sharedPreferences;
     private ValueEventListener mValueEventListener, oppPlayerValueEventListener, oppGameValueEventListener;
     private MainView mainView;
     private String uniqueKey;
@@ -42,16 +38,16 @@ class MainPresenter {
     private Game myGame, opponentGame;
     private DailyData dailyData;
     private String roomKey = "";
-    int previousPoints = 0;
+    private int previousPoints = 0;
     private long x = 0;
 
-    MainPresenter(final MainView mainView, final SharedPreferences sharedPreferences) {
+    MainPresenter(final MainView mainView) {
         FirebaseDatabase mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseAuth = FirebaseAuth.getInstance();
         mPlayersDatabaseReference = mFirebaseDatabase.getReference().child("players");
         mRoomDatabaseReference = mFirebaseDatabase.getReference().child("room");
-        this.sharedPreferences = sharedPreferences;
         this.mainView = mainView;
+        countDownTimer();
 
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -121,7 +117,7 @@ class MainPresenter {
 
     private void setDailyData() {
         Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd ", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         final String strDate = dateFormat.format(calendar.getTime());
         final DailyData dailyData = new DailyData(0, 0, 0, 0f, 0f);
         ValueEventListener valueEventListener = new ValueEventListener() {
@@ -163,7 +159,6 @@ class MainPresenter {
                     String opponentKey = opponentPlayer.getUniqueKey();
                     if (!opponentKey.equals(uniqueKey)) {
                         mRoomDatabaseReference.child(roomKey).removeValue();
-                        mainView.oppFound();
                         Game game = new Game(0, 0, 0f, 0f);
                         mMyGameDatabaseReference.setValue(game);
                         setOpponentPlayerListener();
@@ -206,10 +201,11 @@ class MainPresenter {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 mainView.gameLayout();
                 opponentPlayer = dataSnapshot.getValue(Player.class);
+                Uri uri = Uri.parse(opponentPlayer.getUserImageUri());
                 mainView.oppUserName(opponentPlayer.getUserName());
-                mainView.oppUserImage(Uri.parse(opponentPlayer.getUserImageUri()));
-                mPlayersDatabaseReference.child(opponentPlayer.getUniqueKey()).removeEventListener(this);
-
+                mainView.oppUserImage(uri);
+                mainView.oppFound();
+                mainView.gameStart();
             }
 
             @Override
@@ -217,7 +213,7 @@ class MainPresenter {
 
             }
         };
-        mPlayersDatabaseReference.child(opponentPlayer.getUniqueKey()).child("player").addValueEventListener(oppPlayerValueEventListener);
+        mPlayersDatabaseReference.child(opponentPlayer.getUniqueKey()).child("player").addListenerForSingleValueEvent(oppPlayerValueEventListener);
     }
 
     void addPoints() {
@@ -252,7 +248,7 @@ class MainPresenter {
         mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
     }
 
-    void executorTest() {
+    void inAppTimeCount() {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -262,14 +258,36 @@ class MainPresenter {
         };
         exec = Executors.newSingleThreadScheduledExecutor();
         exec.scheduleAtFixedRate(runnable, 0, 1, TimeUnit.SECONDS);
-        exec.shutdown();
+    }
+
+    void inGameTimeCount(){
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                x++;
+                Log.d("test", "" + x);
+            }
+        };
+        exec = Executors.newSingleThreadScheduledExecutor();
+        exec.scheduleAtFixedRate(runnable, 0, 1, TimeUnit.SECONDS);
     }
 
     void stopExecutor() {
         exec.shutdown();
     }
 
-    void startAnimation() {
+    private void countDownTimer(){
+        CountDownTimer countDownTimer = new CountDownTimer(15000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                mainView.countDownTimer((int) millisUntilFinished / 1000 + 1);
+            }
 
+            @Override
+            public void onFinish() {
+
+            }
+        };
+        countDownTimer.start();
     }
 }

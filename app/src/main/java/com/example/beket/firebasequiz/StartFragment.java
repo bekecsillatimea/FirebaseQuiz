@@ -1,6 +1,5 @@
 package com.example.beket.firebasequiz;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -33,10 +32,11 @@ public class StartFragment extends Fragment {
         leaderboardImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Activity activity = getActivity();
-                if (activity != null) {
+                if (getActivity() != null) {
                     getActivity().getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.start_fragment_container, leaderboardFragment).commit();
+                            .replace(R.id.start_fragment_container, leaderboardFragment)
+                            .addToBackStack(null)
+                            .commit();
                 }
             }
         });
@@ -44,10 +44,11 @@ public class StartFragment extends Fragment {
         statsImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Activity activity = getActivity();
-                if (activity != null) {
+                if (getActivity() != null) {
                     getActivity().getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.start_fragment_container, statsFragment).commit();
+                            .replace(R.id.start_fragment_container, statsFragment)
+                            .addToBackStack(null)
+                            .commit();
                 }
             }
         });

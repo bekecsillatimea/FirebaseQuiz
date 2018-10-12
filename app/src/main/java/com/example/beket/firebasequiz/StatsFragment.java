@@ -1,12 +1,19 @@
 package com.example.beket.firebasequiz;
 
+import android.app.DatePickerDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.DatePicker;
+import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.AxisBase;
@@ -34,51 +41,78 @@ public class StatsFragment extends Fragment {
     DailyData dailyData;
     List<BarEntry> entriesGroup1 = new ArrayList<>();
     BarChart barChart;
+    TextView dateText;
+    DatabaseReference dailyDataReference;
+    SimpleDateFormat dateFormat;
+    Calendar calendar;
+    String strDate;
+    DatePickerDialog.OnDateSetListener onDateSetListener;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.stats_fragment, container, false);
-
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         barChart = root.findViewById(R.id.chart);
+        dateText = root.findViewById(R.id.date_text_view);
         DatabaseReference playersReference = FirebaseDatabase.getInstance().getReference().child("players");
-        DatabaseReference dailyDataReference = playersReference.child(userId).child("dailyData");
-
-        Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd ", Locale.getDefault());
-        final String strDate = dateFormat.format(calendar.getTime());
-
-        ValueEventListener valueEventListener = new ValueEventListener() {
+        dailyDataReference = playersReference.child(userId).child("dailyData");
+        calendar = Calendar.getInstance();
+        dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        strDate = dateFormat.format(calendar.getTime());
+        dateText.setText(strDate);
+        dateText.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                dailyData = dataSnapshot.getValue(DailyData.class);
-                setUpStats();
+            public void onClick(View v) {
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH);
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+                if (getContext() != null) {
+                    DatePickerDialog datePickerDialog = new DatePickerDialog(
+                            getContext(),
+                            android.R.style.Theme_DeviceDefault_Dialog_MinWidth,
+                            onDateSetListener,
+                            year, month, day);
+                    datePickerDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                    datePickerDialog.show();
+                }
             }
+        });
 
+        onDateSetListener = new DatePickerDialog.OnDateSetListener() {
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
+            public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                month++;
+                if (dayOfMonth < 10) strDate = year + "-" + month + "-0" + dayOfMonth;
+                else strDate = year + "-" + month + "-" + dayOfMonth;
+                dateText.setText(strDate);
+                getDateData();
             }
         };
-        dailyDataReference.child(strDate).addListenerForSingleValueEvent(valueEventListener);
+        getDateData();
         return root;
     }
 
     void setUpStats() {
-        entriesGroup1.add(new BarEntry(1f, dailyData.getGamesPlayed()));
-        entriesGroup1.add(new BarEntry(2f, dailyData.getGamesWon()));
-        entriesGroup1.add(new BarEntry(3f, dailyData.getCorrectAnswers()));
-        entriesGroup1.add(new BarEntry(4f, dailyData.getAverageTime()));
-        entriesGroup1.add(new BarEntry(5f, dailyData.getPlayedTime()));
 
-        BarDataSet set1 = new BarDataSet(entriesGroup1, "Group 1");
-        set1.setColors(ColorTemplate.COLORFUL_COLORS);
-
-        BarData data = new BarData(set1);
-        //
-
+        BarDataSet set1;
+        BarData data;
+        if (dailyData != null) {
+            entriesGroup1.add(new BarEntry(1f, dailyData.getGamesPlayed()));
+            entriesGroup1.add(new BarEntry(2f, dailyData.getGamesWon()));
+            entriesGroup1.add(new BarEntry(3f, dailyData.getCorrectAnswers()));
+            entriesGroup1.add(new BarEntry(4f, dailyData.getAverageTime()));
+            entriesGroup1.add(new BarEntry(5f, dailyData.getPlayedTime()));
+            set1 = new BarDataSet(entriesGroup1, "Group 1");
+            set1.setColors(ColorTemplate.COLORFUL_COLORS);
+            data = new BarData(set1);
+        } else {
+            barChart.setNoDataText("No data for this date!");
+            data = null;
+        }
         barChart.setData(data);
         barChart.getDescription().setEnabled(false);
         barChart.animateY(1000);
@@ -95,5 +129,21 @@ public class StatsFragment extends Fragment {
                 return xAxisValues[valueToInt];
             }
         });
+    }
+
+    void getDateData() {
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                dailyData = dataSnapshot.getValue(DailyData.class);
+                setUpStats();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        dailyDataReference.child(strDate).addListenerForSingleValueEvent(valueEventListener);
     }
 }

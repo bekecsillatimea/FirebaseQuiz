@@ -32,7 +32,7 @@ public class LeaderboardFragment extends Fragment {
         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
             players.clear();
             for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                Player player = snapshot.getValue(Player.class);
+                Player player = snapshot.child("player").getValue(Player.class);
                 players.add(player);
             }
             setUpRecyclerView(recyclerView);
@@ -50,14 +50,18 @@ public class LeaderboardFragment extends Fragment {
         for(Player player: players){
             maxGamesWon.add(player.getGamesWon());
         }
-        while(maxGamesWon.size() != 0){
-            for(int i = 0; i < maxGamesWon.size(); i++){
+        int maxGamesWonSize = maxGamesWon.size();
+        while(maxGamesWonSize != 0){
+            for(int i = 0; i < maxGamesWon.size() - 1; i++){
                 int currentNumber = maxGamesWon.get(i);
                 if(currentNumber > maxNumber) maxNumber = currentNumber;
             }
+
             int index = maxGamesWon.indexOf(maxNumber);
             orderedPlayers.add(players.get(index));
             maxGamesWon.remove(index);
+            players.remove(index);
+            maxGamesWonSize--;
             maxNumber = 0;
         }
     }
@@ -67,7 +71,7 @@ public class LeaderboardFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.leaderboard_fragment, container, false);
         recyclerView = root.findViewById(R.id.leaderboard_recycler_view);
-        databaseReference.addValueEventListener(listener);
+        databaseReference.addListenerForSingleValueEvent(listener);
         return root;
     }
 
@@ -77,11 +81,5 @@ public class LeaderboardFragment extends Fragment {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(adapter);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        databaseReference.removeEventListener(listener);
     }
 }
